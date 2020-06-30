@@ -49,7 +49,6 @@ public class StudyObstacleManager : MonoBehaviour
 
     public GameObject ReEnableTarget()
     {
-        Debug.Log("reenabling target");
         GameObject newTarget = Instantiate(target);
         Destroy(target);
         target = newTarget;
@@ -57,15 +56,18 @@ public class StudyObstacleManager : MonoBehaviour
         return target;
     }
 
-    public void ReEnableRails()
+    public void ReEnableRails(Vector3 targetPos, float width, int angle)
     {
-        Debug.Log("reenabling rails");
         Debug.Log(rails.Length);
         ArrayList newRails = new ArrayList();
         for (int i = 0; i < rails.Length; i++)
         {
             GameObject rail = Instantiate(rails[i]);
             rail.SetActive(true);
+            int rotationAngle = angle + i * 90;
+            rail.transform.localScale = new Vector3(15, 1, width);
+            rail.transform.eulerAngles = new Vector3(0, rotationAngle, 0);
+            rail.transform.position = targetPos;
             newRails.Add(rail);
             EnableObstacle(rail.gameObject.GetComponent<PantoCollider>());
             Debug.Log("enabled rail");

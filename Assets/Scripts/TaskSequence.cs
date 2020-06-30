@@ -40,7 +40,8 @@ public class TaskSequence : MonoBehaviour
         foreach (string record in records)
         {
             string[] fields = record.Split(',');
-            StudyTask t = new StudyTask(GenerateSpawnPosition(), GenerateSpawnPosition(), 10, 0.2, true, 45, 1);
+            int railAngle = UnityEngine.Random.Range(0, 6) * 15;
+            StudyTask t = new StudyTask(GenerateSpawnPosition(), GenerateSpawnPosition(), 10, 0.2f, true, railAngle, 1);
             tasks.Add(t);
         }
     }
@@ -59,7 +60,7 @@ public class TaskSequence : MonoBehaviour
             target.transform.localScale = new Vector3(t.targetSize, t.targetSize, t.targetSize);
             if (t.guidesEnabled)
             {
-                om.ReEnableRails();
+                om.ReEnableRails(t.targetPos, t.guideWidth, t.guideAngle);
             }
             //enable obstacles and rails
             await speech.Speak("3, 2, 1, Go", 0.5f);
@@ -74,7 +75,7 @@ public class TaskSequence : MonoBehaviour
     private Vector3 GenerateSpawnPosition()
     {
         float randomPosX = UnityEngine.Random.Range(-spawnRange, spawnRange);
-        float randomPosZ = -10 + UnityEngine.Random.Range(-spawnRange, spawnRange);
+        float randomPosZ = -6 + UnityEngine.Random.Range(-spawnRange, spawnRange);
         Vector3 randomPos = new Vector3(randomPosX, 1, randomPosZ);
         return randomPos;
     }
@@ -102,13 +103,13 @@ public class StudyTask
     public Vector3 targetPos;
     public Vector3 startPos;
     public int guideLength;
-    public double guideWidth;
+    public float guideWidth;
     public bool guidesEnabled;
     public int guideAngle;
     public int targetSize;
     public long time;
 
-    public StudyTask(Vector3 targetPos, Vector3 startPos, int guideLength, double guideWidth, bool guidesEnabled, int guideAngle, int targetSize)
+    public StudyTask(Vector3 targetPos, Vector3 startPos, int guideLength, float guideWidth, bool guidesEnabled, int guideAngle, int targetSize)
     {
         this.targetPos = targetPos;
         this.startPos = startPos;
