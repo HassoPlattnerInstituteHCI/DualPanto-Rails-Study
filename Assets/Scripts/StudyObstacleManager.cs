@@ -34,7 +34,7 @@ public class StudyObstacleManager : MonoBehaviour
         if (target)
         {
 
-            target.gameObject.GetComponent<PantoCircularCollider>().Disable();
+            target.gameObject.GetComponent<PantoCircularCollider>().Remove();
             await Task.Delay(100);
         }
         if (rails.Length!=0)
@@ -43,7 +43,7 @@ public class StudyObstacleManager : MonoBehaviour
             for (int i = 0; i < rails.Length; i++)
             {
                 Debug.Log("Disabling rail " + rails[i].GetInstanceID());
-                rails[i].GetComponent<PantoBoxCollider>().Disable();
+                rails[i].GetComponent<PantoBoxCollider>().Remove();
                 rails[i].SetActive(false);
                 await Task.Delay(100);
             }

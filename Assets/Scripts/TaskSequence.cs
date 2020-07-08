@@ -79,14 +79,14 @@ public class TaskSequence : MonoBehaviour
             StudyTask t = (StudyTask)tasks[currentTaskId];
             PantoHandle handle = (PantoHandle)GameObject.Find("Panto").GetComponent<LowerHandle>();
             await Task.Delay(1000);
-            await handle.MoveToPosition(t.startPos, 0.005f, true);
+            Vector3 s = new Vector3(
+                5,
+                0,
+                -5);
+            //await handle.MoveToPosition(t.startPos, 0.005f, true);
+            await handle.MoveToPosition(s, 0.005f, true);
             target = om.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
-            //await Task.Delay(1000);
-            //om.DisableAll();
-            //target = om.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
-            //om.DisableAll();
-            //target = om.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
-
+            
 
             if (t.guidesEnabled)
             {
