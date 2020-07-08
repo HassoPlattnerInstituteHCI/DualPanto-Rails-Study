@@ -7,13 +7,14 @@ public class StudyObstacleManager : MonoBehaviour
 {
     private GameObject target;
     GameObject[] rails;
-    async void Start()
+    void Start()
     {
         target = GameObject.Find("Target");
         rails = GameObject.FindGameObjectsWithTag("Rail");
+        Debug.Log("Starting obstacle manager");
         // if we register obstacles too early, the device will not work any longer (only sync debug logs will be printed
         // I am working on fixing this, but for now just add a wait
-        await Task.Delay(1000);
+        //await Task.Delay(1000);
         //PantoCollider[] pantoColliders = GameObject.FindObjectsOfType<PantoCollider>();
         /*foreach (PantoCollider collider in pantoColliders)
         {
@@ -28,49 +29,57 @@ public class StudyObstacleManager : MonoBehaviour
     }
 
 
-    public void DisableAll()
+    async public void DisableAll()
     {
         if (target)
         {
 
             target.gameObject.GetComponent<PantoCircularCollider>().Disable();
+            await Task.Delay(100);
         }
         if (rails.Length!=0)
         {
 
             for (int i = 0; i < rails.Length; i++)
             {
-                //Debug.Log("Disabling rails");
+                Debug.Log("Disabling rail " + rails[i].GetInstanceID());
                 rails[i].GetComponent<PantoBoxCollider>().Disable();
                 rails[i].SetActive(false);
+                await Task.Delay(100);
             }
         }
+        await Task.Delay(1000);
     }
 
-    public GameObject ReEnableTarget()
+    public GameObject ReEnableTarget(Vector3 position, Vector3 scale)
     {
         GameObject newTarget = Instantiate(target);
         Destroy(target);
         target = newTarget;
+        target.transform.position = position;
+        target.transform.localScale = scale;
+        Debug.Log("enabling target " + target.GetInstanceID());
+        //target.gameObject.AddComponents<PantoCollider>());
         EnableObstacle(target.gameObject.GetComponent<PantoCollider>());
+        Debug.Log("enabled target");
         return target;
     }
 
-    public void ReEnableRails(Vector3 targetPos, float width, int angle)
+    public void ReEnableRails(Vector3 targetPos, float width, int length)
     {
-        Debug.Log(rails.Length);
         ArrayList newRails = new ArrayList();
         for (int i = 0; i < rails.Length; i++)
         {
             GameObject rail = Instantiate(rails[i]);
             rail.SetActive(true);
-            int rotationAngle = angle + i * 90;
-            rail.transform.localScale = new Vector3(15, 1, width);
+            int rotationAngle = 45 + i * 90;
+            rail.transform.localScale = new Vector3(length, 1, width);
             rail.transform.eulerAngles = new Vector3(0, rotationAngle, 0);
             rail.transform.position = targetPos;
             newRails.Add(rail);
-            EnableObstacle(rail.gameObject.GetComponent<PantoCollider>());
-            Debug.Log("enabled rail");
+            rail.gameObject.AddComponent<PantoBoxCollider>();
+            EnableObstacle(rail.gameObject.GetComponent<PantoBoxCollider>());
+            Debug.Log("enabled rail " + rail.GetInstanceID());
         }
         for (int i = 0; i < rails.Length; i++)
         {
