@@ -21,6 +21,7 @@ public class TaskSequence : MonoBehaviour
     GameObject[] pauseObjects;
     GameObject[] finishObjects;
 
+    AudioSource audioSource;
     public TextAsset csvFile;
     public int taskChunkSize;
 
@@ -33,6 +34,7 @@ public class TaskSequence : MonoBehaviour
         startObjects = GameObject.FindGameObjectsWithTag("ShowOnStart");
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
+        audioSource = GetComponent<AudioSource>();
         Time.timeScale = 1;
         ReadProtocol();
         ShowStartMenu();
@@ -114,6 +116,7 @@ public class TaskSequence : MonoBehaviour
         //if Target detected collision ->
         if (isRunning)
         {
+            audioSource.Play();
             isRunning = false;
             StudyTask t = (StudyTask)tasks[currentTaskId];
             //disable obstacles and rails
