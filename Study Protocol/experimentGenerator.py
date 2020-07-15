@@ -8,8 +8,8 @@ user_id = randrange(0,100000)
 task_id = 0
 block_id = 0
 
-panto_bounds_x = [-12, 12]
-panto_bounds_y = [-3, -16]
+panto_bounds_x = [-11, 11]
+panto_bounds_y = [-4, -16]
 
 
 def is_in_bounds(point):
@@ -55,11 +55,11 @@ def generate_start_positions(target_positions, angles_count, distances):
     return start_target_pairs
 
 
-target_positions   = [[-8, -7], [8,-7], [-12,-11], [12,-11], [-8,-15], [8,-15]] # 6 target positions (circular around the middle)
-target_distances = [2,4,8]
+target_positions   = [[-8, -6], [8,-6], [-10,-9], [10,-9], [-8,-12], [8,-12]] # 6 target positions (circular around the middle)
+target_distances = [4,8,12]
 trials_per_block   = 6
 #conditions         = ['rail', 'control'] #rail / control condition
-rail_lengths = [2,4,8]
+rail_lengths = [8,12,16]
 
 positions = generate_start_positions(target_positions=target_positions, angles_count=3, distances=target_distances)
 shuffle(positions)

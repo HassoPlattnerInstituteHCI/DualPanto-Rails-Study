@@ -3,23 +3,29 @@ using System.Collections;
 using System;
 using SpeechIO;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine.UI;
 
 public class TaskSequence : MonoBehaviour
 {
 
-    //TODO: spawn using protocol positions and angles
-    private float spawnRange = 2f;
     private GameObject target;
     private GameObject manager;
-    private ArrayList durations = new ArrayList();
     private long startTime;
-    private ArrayList tasks = new ArrayList();
-    private int currentTaskId;
+    private Dictionary<int, List<StudyTask>> tasks = new Dictionary<int, List<StudyTask>>();
+    //private ArrayList tasks = new ArrayList(); // TODO: put the tasks into chunks
+    private Dictionary<int, List<string>> questionnaireAnswers = new Dictionary<int, List<string>>(); // ["agency","easiness"] 
+    private int currentTaskId = 0;
+    private int currentChunkId = 0;
+    private int currentTaskInChunk = 0;
     private bool isRunning = false;
     private SpeechOut speech;
     GameObject[] startObjects;
     GameObject[] pauseObjects;
     GameObject[] finishObjects;
+    private int userId = -1;
+    private int taskCount = 0;
 
     AudioSource audioSource;
     public TextAsset csvFile;
@@ -47,7 +53,16 @@ public class TaskSequence : MonoBehaviour
         {
             string record = records[i];
             string[] fields = record.Split(',');
-            
+            if(fields.Length <= 1)
+            {
+                continue;
+            }
+            if (userId == -1)
+            {
+                userId = int.Parse(fields[0]);
+            } 
+            int blockId = int.Parse(fields[1]);
+            int taskId = int.Parse(fields[2]);
             Vector3 targetPos = new Vector3(
                 float.Parse(fields[5],System.Globalization.CultureInfo.InvariantCulture),
                 0,
@@ -56,59 +71,54 @@ public class TaskSequence : MonoBehaviour
                 float.Parse(fields[3], System.Globalization.CultureInfo.InvariantCulture),
                 0,
                 float.Parse(fields[4], System.Globalization.CultureInfo.InvariantCulture));
-            //int railAngle = UnityEngine.Random.Range(0, 6) * 15;
-            float railWidth = UnityEngine.Random.Range(1, 4) * 0.1f;
-            //float targetSize = UnityEngine.Random.Range(0, 3) * 0.5f + 1;
-            StudyTask t = new StudyTask(0, 1, 0, targetPos, startPos, 0.2f, true, Int32.Parse(fields[9]), 1);
-            tasks.Add(t);
+            StudyTask t = new StudyTask(userId, taskId, blockId, targetPos, startPos, 0.2f, true, Int32.Parse(fields[9]), 1);
+            //Debug.Log(blockId);
+            if (tasks.ContainsKey(blockId))
+            {
+                tasks[blockId].Add(t);
+            } else
+            {
+                tasks.Add(blockId, new List<StudyTask> { t });
+            }
+            //Debug.Log(tasks);
+            taskCount++;
         }
     }
 
     async void NextTask()
     {
-        if(currentTaskId == tasks.Count)
+        if(currentTaskId == taskCount)
         {
             Debug.Log("Finished study");
-            Debug.Log(tasks.Count);
+            Debug.Log(taskCount);
             speech.Speak("Well done, you've completed the user study. Thanks for participating!", 1);
             FinishStudy();
         } else
         {
             StudyObstacleManager om = manager.gameObject.GetComponent<StudyObstacleManager>();
             om.DisableAll();
-            StudyTask t = (StudyTask)tasks[currentTaskId];
-            PantoHandle handle = (PantoHandle)GameObject.Find("Panto").GetComponent<LowerHandle>();
+            StudyTask t = tasks[currentChunkId][currentTaskInChunk];
+            PantoHandle handle = GameObject.Find("Panto").GetComponent<LowerHandle>();
             await Task.Delay(1000);
             Vector3 s = new Vector3(
-                5,
+                2,
                 0,
                 -5);
-            //await handle.MoveToPosition(t.startPos, 0.005f, true);
-            await handle.MoveToPosition(s, 0.005f, true);
-            target = om.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
+            await handle.MoveToPosition(t.startPos, 0.005f, true);
+            //await handle.MoveToPosition(s, 0.005f, true);
             
+            await speech.Speak("3, 2, 1, Go", 0.5f);
+            target = om.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
 
             if (t.guidesEnabled)
             {
                 om.ReEnableRails(t.targetPos, t.guideWidth, t.guideLength);
             }
-            Debug.Log("re enabled objects");
-            await Task.Delay(1000);
-            Debug.Log("waited for a second");
-            //enable obstacles and rails
-            await speech.Speak("3, 2, 1, Go", 0.5f);
+            
             startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             isRunning = true;
         }
         
-    }
-
-    private Vector3 GenerateSpawnPosition()
-    {
-        float randomPosX = UnityEngine.Random.Range(-spawnRange, spawnRange);
-        float randomPosZ = -6 + UnityEngine.Random.Range(-spawnRange, spawnRange);
-        Vector3 randomPos = new Vector3(randomPosX, 1, randomPosZ);
-        return randomPos;
     }
 
     public void StopTask()
@@ -118,11 +128,11 @@ public class TaskSequence : MonoBehaviour
         {
             audioSource.Play();
             isRunning = false;
-            StudyTask t = (StudyTask)tasks[currentTaskId];
-            //disable obstacles and rails
+            StudyTask t = tasks[currentChunkId][currentTaskInChunk];
             t.time = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - startTime;
             Debug.Log("Task finished in " + t.time);
             currentTaskId++;
+            currentTaskInChunk++;
             if (currentTaskId % taskChunkSize != 0)
             {
                 NextTask();
@@ -166,9 +176,24 @@ public class TaskSequence : MonoBehaviour
         }
     }
 
+    public void FinishQuestionnaire()
+    {
+        string agency = GameObject.Find("AgencySlider").GetComponent<Slider>().value.ToString();
+        string easiness = GameObject.Find("EasinessSlider").GetComponent<Slider>().value.ToString();
+        questionnaireAnswers[currentChunkId] = new List<string> { agency, easiness };
+        ExportResults();
+        currentChunkId++;
+        currentTaskInChunk = 0;
+    }
+
     //hides objects with ShowOnPause tag
     public void ContinueStudy()
     {
+        // except of the first run always evaluate the questionnaire after a chunk
+        if (currentTaskId > 0)
+        {
+            FinishQuestionnaire();
+        }
         Time.timeScale = 1;
         foreach (GameObject g in startObjects)
         {
@@ -183,6 +208,35 @@ public class TaskSequence : MonoBehaviour
             g.SetActive(false);
         }
         NextTask();
+    }
+
+    private void ExportResults()
+    {
+        string path = "studyResults_" + userId + ".csv";
+        if (!File.Exists(path))
+        {
+            // add header to csv file (watch the order of attributes and questionnaire answers
+            string header = "UserId, TaskId, BlockId, TargetX, TargetY, StartX, StartY, GuideLength, Time, Agency, Easiness";
+            using (StreamWriter sw = File.CreateText(path))
+            {
+                sw.WriteLine(header);
+            }
+        }
+
+        using (StreamWriter writer = File.AppendText(path))
+        {
+            Debug.Log("Current chunk id");
+            Debug.Log(currentChunkId);
+            foreach (StudyTask t in tasks[currentChunkId])
+            {
+                // append the results from the questionnaire
+                List<string> answers = questionnaireAnswers[t.blockId];
+                string res = t.ToString(answers);
+                Debug.Log(res);
+                writer.WriteLine(res + "\n");
+            }
+        }
+        Debug.Log("Wrote to file");
     }
 
 }
@@ -211,11 +265,26 @@ public class StudyTask
         this.guidesEnabled = guidesEnabled;
         this.guideLength = guideLength;
         this.targetSize = targetSize;
-        this.time = -1;
+        time = -1;
     }
 
-    public override string ToString()
+    public string ToString(List<string> answers)
     {
-        return "......";
+        // order of attributes is the same as in the object
+        // order is userId, taskId, blockId, targetX, targetY, startX, startY, guideLength, time
+        ArrayList attrs = new ArrayList{
+            userId.ToString(),
+            taskId.ToString(),
+            blockId.ToString(),
+            targetPos.x.ToString(),
+            targetPos.z.ToString(),
+            startPos.x.ToString(),
+            startPos.z.ToString(),
+            guideLength.ToString(),
+            time.ToString()
+        };
+        // at the end append the answers to the questions in the order of appearance
+        attrs.AddRange(answers);
+        return string.Join(",", attrs.ToArray());
     }
 }

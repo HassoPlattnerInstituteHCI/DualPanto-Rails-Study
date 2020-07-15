@@ -24,8 +24,10 @@ public class StudyObstacleManager : MonoBehaviour
 
     private void EnableObstacle(PantoCollider collider)
     {
+        collider.onUpper = false;
         collider.CreateObstacle();
         collider.Enable();
+        
     }
 
 
