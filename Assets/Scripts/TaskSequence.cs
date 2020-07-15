@@ -10,14 +10,12 @@ using UnityEngine.UI;
 public class TaskSequence : MonoBehaviour
 {
 
-    private GameObject target;
     private GameObject manager;
     private long startTime;
     private Dictionary<int, List<StudyTask>> tasks = new Dictionary<int, List<StudyTask>>();
     //private ArrayList tasks = new ArrayList(); // TODO: put the tasks into chunks
     private Dictionary<int, List<string>> questionnaireAnswers = new Dictionary<int, List<string>>(); // ["agency","easiness"] 
     private int currentTaskId = 0;
-    private int currentChunkId = 0;
     private int currentTaskInChunk = 0;
     private bool isRunning = false;
     private SpeechOut speech;
@@ -30,12 +28,12 @@ public class TaskSequence : MonoBehaviour
     AudioSource audioSource;
     public TextAsset csvFile;
     public int taskChunkSize;
+    public int currentChunkId = 0; // allow to start at a later block if the apparatus crashes during execution
 
     // Use this for initialization
     void Start()
     {
         speech = new SpeechOut();
-        target = GameObject.Find("Target");
         manager = GameObject.Find("Manager");
         startObjects = GameObject.FindGameObjectsWithTag("ShowOnStart");
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
@@ -104,11 +102,12 @@ public class TaskSequence : MonoBehaviour
                 2,
                 0,
                 -5);
-            await handle.MoveToPosition(t.startPos, 0.005f, true);
+            await handle.MoveToPosition(t.startPos, 0.005f, false);
             //await handle.MoveToPosition(s, 0.005f, true);
             
             await speech.Speak("3, 2, 1, Go", 0.5f);
-            target = om.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
+            handle.Free();
+            om.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
 
             if (t.guidesEnabled)
             {
@@ -139,15 +138,27 @@ public class TaskSequence : MonoBehaviour
             }
             else
             {
-                speech.Speak("Chunk completed", 1);
-                Debug.Log("Finished chunk - continue with questionnaire");
+                speech.Speak("Sequence completed. Please rate the statements on the screen.", 1);
                 ShowQuestionnaire();
             }
         }
-
     }
 
-    private void ShowStartMenu()
+    public void LogTimeToRail()
+    {
+        if (isRunning)
+        {
+            StudyTask t = tasks[currentChunkId][currentTaskInChunk];
+            long timeToRail = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - startTime;
+            // make sure to have a min time for the time to rail, otherwise the collision might be detected right when the rail is spawned
+            if (t.timeToRail == -1 && timeToRail > 30)
+            {
+                t.timeToRail = timeToRail;
+            }
+        }
+    }
+
+        private void ShowStartMenu()
     {
         Time.timeScale = 0;
         foreach (GameObject g in startObjects)
@@ -178,12 +189,17 @@ public class TaskSequence : MonoBehaviour
 
     public void FinishQuestionnaire()
     {
-        string agency = GameObject.Find("AgencySlider").GetComponent<Slider>().value.ToString();
-        string easiness = GameObject.Find("EasinessSlider").GetComponent<Slider>().value.ToString();
+        Slider agencySlider = GameObject.Find("AgencySlider").GetComponent<Slider>();
+        Slider easinessSlider = GameObject.Find("EasinessSlider").GetComponent<Slider>();
+
+        string agency = agencySlider.value.ToString();
+        string easiness = easinessSlider.value.ToString();
         questionnaireAnswers[currentChunkId] = new List<string> { agency, easiness };
         ExportResults();
         currentChunkId++;
         currentTaskInChunk = 0;
+        agencySlider.SetValueWithoutNotify(3);
+        easinessSlider.SetValueWithoutNotify(3);
     }
 
     //hides objects with ShowOnPause tag
@@ -216,7 +232,7 @@ public class TaskSequence : MonoBehaviour
         if (!File.Exists(path))
         {
             // add header to csv file (watch the order of attributes and questionnaire answers
-            string header = "UserId, TaskId, BlockId, TargetX, TargetY, StartX, StartY, GuideLength, Time, Agency, Easiness";
+            string header = "UserId, TaskId, BlockId, TargetX, TargetY, StartX, StartY, GuideLength, Time, TimeToRail, Agency, Easiness";
             using (StreamWriter sw = File.CreateText(path))
             {
                 sw.WriteLine(header);
@@ -225,20 +241,15 @@ public class TaskSequence : MonoBehaviour
 
         using (StreamWriter writer = File.AppendText(path))
         {
-            Debug.Log("Current chunk id");
-            Debug.Log(currentChunkId);
             foreach (StudyTask t in tasks[currentChunkId])
             {
                 // append the results from the questionnaire
                 List<string> answers = questionnaireAnswers[t.blockId];
                 string res = t.ToString(answers);
-                Debug.Log(res);
-                writer.WriteLine(res + "\n");
+                writer.WriteLine(res);
             }
         }
-        Debug.Log("Wrote to file");
     }
-
 }
 
 public class StudyTask
@@ -253,6 +264,7 @@ public class StudyTask
     public int guideLength;
     public float targetSize;
     public long time;
+    public long timeToRail;
 
     public StudyTask(int userId, int taskId, int blockId, Vector3 targetPos, Vector3 startPos, float guideWidth, bool guidesEnabled, int guideLength, float targetSize)
     {
@@ -266,6 +278,7 @@ public class StudyTask
         this.guideLength = guideLength;
         this.targetSize = targetSize;
         time = -1;
+        timeToRail = -1;
     }
 
     public string ToString(List<string> answers)
@@ -281,9 +294,10 @@ public class StudyTask
             startPos.x.ToString(),
             startPos.z.ToString(),
             guideLength.ToString(),
-            time.ToString()
+            time.ToString(),
+            timeToRail.ToString()
         };
-        // at the end append the answers to the questions in the order of appearance
+        // at the end append the answers of the questionnaire in the order of appearance
         attrs.AddRange(answers);
         return string.Join(",", attrs.ToArray());
     }
