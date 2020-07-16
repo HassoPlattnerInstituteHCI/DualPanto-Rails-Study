@@ -19,7 +19,8 @@ public class TaskSequence : MonoBehaviour
     private int currentTaskInChunk = 0;
     private bool isRunning = false;
     private SpeechOut speech;
-    GameObject[] startObjects;
+    GameObject[] introObjects; 
+    GameObject[] startObjects; // shown after the training phase, before start of the actual study
     GameObject[] pauseObjects;
     GameObject[] finishObjects;
     private int userId = -1;
@@ -28,20 +29,21 @@ public class TaskSequence : MonoBehaviour
     AudioSource audioSource;
     public TextAsset csvFile;
     public int taskChunkSize;
-    public int currentChunkId = 0; // allow to start at a later block if the apparatus crashes during execution
-
+    public int currentChunkId = -1; // allow to start at a later block if the apparatus crashes during execution
+    // start with chunk -1 (test runs)
     // Use this for initialization
     void Start()
     {
         speech = new SpeechOut();
         manager = GameObject.Find("Manager");
+        introObjects = GameObject.FindGameObjectsWithTag("ShowOnIntro");
         startObjects = GameObject.FindGameObjectsWithTag("ShowOnStart");
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
         audioSource = GetComponent<AudioSource>();
         Time.timeScale = 1;
         ReadProtocol();
-        ShowStartMenu();
+        ShowIntroMenu();
     }
 
     void ReadProtocol()
@@ -58,7 +60,7 @@ public class TaskSequence : MonoBehaviour
             if (userId == -1)
             {
                 userId = int.Parse(fields[0]);
-            } 
+            }
             int blockId = int.Parse(fields[1]);
             int taskId = int.Parse(fields[2]);
             Vector3 targetPos = new Vector3(
@@ -93,9 +95,9 @@ public class TaskSequence : MonoBehaviour
             FinishStudy();
         } else
         {
+            StudyTask t = tasks[currentChunkId][currentTaskInChunk];
             StudyObstacleManager om = manager.gameObject.GetComponent<StudyObstacleManager>();
             om.DisableAll();
-            StudyTask t = tasks[currentChunkId][currentTaskInChunk];
             PantoHandle handle = GameObject.Find("Panto").GetComponent<LowerHandle>();
             await Task.Delay(1000);
             Vector3 s = new Vector3(
@@ -104,7 +106,7 @@ public class TaskSequence : MonoBehaviour
                 -5);
             await handle.MoveToPosition(t.startPos, 0.005f, false);
             //await handle.MoveToPosition(s, 0.005f, true);
-            
+
             await speech.Speak("3, 2, 1, Go", 0.5f);
             handle.Free();
             om.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
@@ -113,11 +115,10 @@ public class TaskSequence : MonoBehaviour
             {
                 om.ReEnableRails(t.targetPos, t.guideWidth, t.guideLength);
             }
-            
+
             startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             isRunning = true;
         }
-        
     }
 
     public void StopTask()
@@ -138,8 +139,17 @@ public class TaskSequence : MonoBehaviour
             }
             else
             {
-                speech.Speak("Sequence completed. Please rate the statements on the screen.", 1);
-                ShowQuestionnaire();
+                // after training phase don't show questionnaire
+                if (currentChunkId==-1)
+                {
+                    speech.Speak("Training completed.", 1);
+                    ShowStartMenu();
+                }
+                else
+                {
+                    speech.Speak("Sequence completed. Please rate the statements on the screen.", 1);
+                    ShowQuestionnaire();
+                }
             }
         }
     }
@@ -158,7 +168,18 @@ public class TaskSequence : MonoBehaviour
         }
     }
 
-        private void ShowStartMenu()
+    // the first menu that the user sees in which the study is explained
+    private void ShowIntroMenu()
+    {
+        Time.timeScale = 0;
+        foreach (GameObject g in introObjects)
+        {
+            g.SetActive(true);
+        }
+    }
+
+    // the actual start menu that shows up after the training phase
+    private void ShowStartMenu()
     {
         Time.timeScale = 0;
         foreach (GameObject g in startObjects)
@@ -166,6 +187,7 @@ public class TaskSequence : MonoBehaviour
             g.SetActive(true);
         }
     }
+
 
     //shows objects with ShowOnPause tag
     public void ShowQuestionnaire()
@@ -196,21 +218,35 @@ public class TaskSequence : MonoBehaviour
         string easiness = easinessSlider.value.ToString();
         questionnaireAnswers[currentChunkId] = new List<string> { agency, easiness };
         ExportResults();
-        currentChunkId++;
-        currentTaskInChunk = 0;
         agencySlider.SetValueWithoutNotify(3);
         easinessSlider.SetValueWithoutNotify(3);
     }
 
-    //hides objects with ShowOnPause tag
     public void ContinueStudy()
     {
-        // except of the first run always evaluate the questionnaire after a chunk
-        if (currentTaskId > 0)
+        // this method is called after the intro, the start and the questionnaire menu
+        // except of the intro, we always want to save the results in the csv file
+        if (currentTaskId == 0)
+        {
+            HideUIAndResume();
+            return;
+        }
+        if (currentChunkId != -1)
         {
             FinishQuestionnaire();
         }
+        currentChunkId++;
+        currentTaskInChunk = 0;
+        HideUIAndResume();
+    }
+
+    private void HideUIAndResume()
+    {
         Time.timeScale = 1;
+        foreach (GameObject g in introObjects)
+        {
+            g.SetActive(false);
+        }
         foreach (GameObject g in startObjects)
         {
             g.SetActive(false);
@@ -225,6 +261,7 @@ public class TaskSequence : MonoBehaviour
         }
         NextTask();
     }
+
 
     private void ExportResults()
     {
