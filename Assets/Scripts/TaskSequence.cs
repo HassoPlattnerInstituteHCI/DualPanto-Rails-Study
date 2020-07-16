@@ -23,6 +23,7 @@ public class TaskSequence : MonoBehaviour
     GameObject[] startObjects; // shown after the training phase, before start of the actual study
     GameObject[] pauseObjects;
     GameObject[] finishObjects;
+    GameObject blackScreen;
     private int userId = -1;
     private int taskCount = 0;
 
@@ -40,6 +41,7 @@ public class TaskSequence : MonoBehaviour
         startObjects = GameObject.FindGameObjectsWithTag("ShowOnStart");
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
+        blackScreen = GameObject.Find("Black Screen");
         audioSource = GetComponent<AudioSource>();
         Time.timeScale = 1;
         ReadProtocol();
@@ -139,6 +141,7 @@ public class TaskSequence : MonoBehaviour
             }
             else
             {
+                blackScreen.SetActive(false);
                 // after training phase don't show questionnaire
                 if (currentChunkId==-1)
                 {
@@ -198,6 +201,7 @@ public class TaskSequence : MonoBehaviour
             g.SetActive(true);
         }
     }
+
 
     public void FinishStudy()
     {
@@ -259,6 +263,7 @@ public class TaskSequence : MonoBehaviour
         {
             g.SetActive(false);
         }
+        blackScreen.SetActive(true);
         NextTask();
     }
 
@@ -285,6 +290,18 @@ public class TaskSequence : MonoBehaviour
                 string res = t.ToString(answers);
                 writer.WriteLine(res);
             }
+        }
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.LeftAlt) || Input.GetKeyDown(KeyCode.RightAlt))
+        {
+            blackScreen.SetActive(false);
+        }
+        else if (Input.GetKeyUp(KeyCode.LeftAlt) || Input.GetKeyUp(KeyCode.RightAlt))
+        {
+            blackScreen.SetActive(true);
         }
     }
 }
