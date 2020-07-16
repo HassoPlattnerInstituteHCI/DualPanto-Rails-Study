@@ -11,24 +11,20 @@ public class TaskSequence : MonoBehaviour
 {
 
     private GameObject manager;
+    private StudyUIManager studyUIManager;
     private long startTime;
     private Dictionary<int, List<StudyTask>> tasks = new Dictionary<int, List<StudyTask>>();
     //private ArrayList tasks = new ArrayList(); // TODO: put the tasks into chunks
     private Dictionary<int, List<string>> questionnaireAnswers = new Dictionary<int, List<string>>(); // ["agency","easiness"] 
-    private int currentTaskId = 0;
     private int currentTaskInChunk = 0;
     private bool isRunning = false;
     private SpeechOut speech;
-    GameObject[] introObjects; 
-    GameObject[] startObjects; // shown after the training phase, before start of the actual study
-    GameObject[] pauseObjects;
-    GameObject[] finishObjects;
-    GameObject blackScreen;
     private int userId = -1;
     private int taskCount = 0;
 
     AudioSource audioSource;
     public TextAsset csvFile;
+    public int currentTaskId = 0;
     public int taskChunkSize;
     public int currentChunkId = -1; // allow to start at a later block if the apparatus crashes during execution
     // start with chunk -1 (test runs)
@@ -37,15 +33,11 @@ public class TaskSequence : MonoBehaviour
     {
         speech = new SpeechOut();
         manager = GameObject.Find("Manager");
-        introObjects = GameObject.FindGameObjectsWithTag("ShowOnIntro");
-        startObjects = GameObject.FindGameObjectsWithTag("ShowOnStart");
-        pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
-        finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
-        blackScreen = GameObject.Find("Black Screen");
+        studyUIManager = GameObject.Find("UI").GetComponent<StudyUIManager>();
         audioSource = GetComponent<AudioSource>();
         Time.timeScale = 1;
         ReadProtocol();
-        ShowIntroMenu();
+        studyUIManager.ShowIntroMenu();
     }
 
     void ReadProtocol()
@@ -87,14 +79,14 @@ public class TaskSequence : MonoBehaviour
         }
     }
 
-    async void NextTask()
+    async public void NextTask()
     {
         if(currentTaskId == taskCount)
         {
             Debug.Log("Finished study");
             Debug.Log(taskCount);
             speech.Speak("Well done, you've completed the user study. Thanks for participating!", 1);
-            FinishStudy();
+            studyUIManager.FinishStudy();
         } else
         {
             StudyTask t = tasks[currentChunkId][currentTaskInChunk];
@@ -141,17 +133,16 @@ public class TaskSequence : MonoBehaviour
             }
             else
             {
-                blackScreen.SetActive(false);
                 // after training phase don't show questionnaire
                 if (currentChunkId==-1)
                 {
                     speech.Speak("Training completed.", 1);
-                    ShowStartMenu();
+                    studyUIManager.ShowStartMenu();
                 }
                 else
                 {
                     speech.Speak("Sequence completed. Please rate the statements on the screen.", 1);
-                    ShowQuestionnaire();
+                    studyUIManager.ShowQuestionnaire();
                 }
             }
         }
@@ -171,104 +162,8 @@ public class TaskSequence : MonoBehaviour
         }
     }
 
-    // the first menu that the user sees in which the study is explained
-    private void ShowIntroMenu()
-    {
-        Time.timeScale = 0;
-        foreach (GameObject g in introObjects)
-        {
-            g.SetActive(true);
-        }
-    }
 
-    // the actual start menu that shows up after the training phase
-    private void ShowStartMenu()
-    {
-        Time.timeScale = 0;
-        foreach (GameObject g in startObjects)
-        {
-            g.SetActive(true);
-        }
-    }
-
-
-    //shows objects with ShowOnPause tag
-    public void ShowQuestionnaire()
-    {
-        Time.timeScale = 0;
-        foreach (GameObject g in pauseObjects)
-        {
-            g.SetActive(true);
-        }
-    }
-
-
-    public void FinishStudy()
-    {
-        Time.timeScale = 0;
-        //export task data as csv
-        foreach (GameObject g in finishObjects)
-        {
-            g.SetActive(true);
-        }
-    }
-
-    public void FinishQuestionnaire()
-    {
-        Slider agencySlider = GameObject.Find("AgencySlider").GetComponent<Slider>();
-        Slider easinessSlider = GameObject.Find("EasinessSlider").GetComponent<Slider>();
-
-        string agency = agencySlider.value.ToString();
-        string easiness = easinessSlider.value.ToString();
-        questionnaireAnswers[currentChunkId] = new List<string> { agency, easiness };
-        ExportResults();
-        agencySlider.SetValueWithoutNotify(3);
-        easinessSlider.SetValueWithoutNotify(3);
-    }
-
-    public void ContinueStudy()
-    {
-        // this method is called after the intro, the start and the questionnaire menu
-        // except of the intro, we always want to save the results in the csv file
-        if (currentTaskId == 0)
-        {
-            HideUIAndResume();
-            return;
-        }
-        if (currentChunkId != -1)
-        {
-            FinishQuestionnaire();
-        }
-        currentChunkId++;
-        currentTaskInChunk = 0;
-        HideUIAndResume();
-    }
-
-    private void HideUIAndResume()
-    {
-        Time.timeScale = 1;
-        foreach (GameObject g in introObjects)
-        {
-            g.SetActive(false);
-        }
-        foreach (GameObject g in startObjects)
-        {
-            g.SetActive(false);
-        }
-        foreach (GameObject g in pauseObjects)
-        {
-            g.SetActive(false);
-        }
-        foreach (GameObject g in finishObjects)
-        {
-            g.SetActive(false);
-        }
-        blackScreen.SetActive(true);
-        NextTask();
-    }
-
-
-    private void ExportResults()
+    public void ExportResults(List<string> answers)
     {
         string path = "studyResults_" + userId + ".csv";
         if (!File.Exists(path))
@@ -286,23 +181,17 @@ public class TaskSequence : MonoBehaviour
             foreach (StudyTask t in tasks[currentChunkId])
             {
                 // append the results from the questionnaire
-                List<string> answers = questionnaireAnswers[t.blockId];
                 string res = t.ToString(answers);
                 writer.WriteLine(res);
             }
         }
     }
 
-    private void Update()
+    public void NextChunk()
     {
-        if (Input.GetKeyDown(KeyCode.LeftAlt) || Input.GetKeyDown(KeyCode.RightAlt))
-        {
-            blackScreen.SetActive(false);
-        }
-        else if (Input.GetKeyUp(KeyCode.LeftAlt) || Input.GetKeyUp(KeyCode.RightAlt))
-        {
-            blackScreen.SetActive(true);
-        }
+        currentChunkId++;
+        currentTaskInChunk = 0;
+
     }
 }
 

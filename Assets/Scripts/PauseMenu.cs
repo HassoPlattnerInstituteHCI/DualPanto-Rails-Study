@@ -20,8 +20,8 @@ public class PauseMenu : MonoBehaviour
 
     void Continue()
     {
-        GameObject studyWizard = GameObject.Find("Study Wizard");
-        studyWizard.GetComponent<TaskSequence>().ContinueStudy();
+        GameObject uiManager = GameObject.Find("UI");
+        uiManager.GetComponent<StudyUIManager>().ContinueStudy();
     }
 
 }
