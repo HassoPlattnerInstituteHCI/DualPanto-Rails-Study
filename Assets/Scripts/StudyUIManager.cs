@@ -127,5 +127,13 @@ public class StudyUIManager : MonoBehaviour
         {
             blackScreen.SetActive(true);
         }
+        else if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            studyWizard.ArrowKeyPressed(false);
+        }
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            studyWizard.ArrowKeyPressed(true);
+        }
     }
 }

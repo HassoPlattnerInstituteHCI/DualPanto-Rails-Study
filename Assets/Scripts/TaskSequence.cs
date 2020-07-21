@@ -17,11 +17,12 @@ public class TaskSequence : MonoBehaviour
     private Dictionary<int, List<string>> questionnaireAnswers = new Dictionary<int, List<string>>(); // ["agency","easiness"] 
     private int currentTaskInChunk = 0;
     private bool isRunning = false;
+    private bool isInRailsFoundQuestion = false;
     private SpeechOut speech;
     private int userId = -1;
     private int taskCount = 0;
     
-    AudioSource audioSource;
+    AudioSource targetAudioSource;
     public TextAsset csvFile;
     public int currentTaskId = 0;
     public int taskChunkSize;
@@ -33,7 +34,7 @@ public class TaskSequence : MonoBehaviour
         speech = new SpeechOut();
         obstacleManager = GameObject.Find("Manager").GetComponent<StudyObstacleManager>();
         studyUIManager = GameObject.Find("UI").GetComponent<StudyUIManager>();
-        audioSource = GetComponent<AudioSource>();
+        targetAudioSource = GetComponent<AudioSource>();
         Time.timeScale = 1;
         ReadProtocol();
         studyUIManager.ShowIntroMenu();
@@ -113,47 +114,47 @@ public class TaskSequence : MonoBehaviour
         }
     }
 
-    public void StopTask()
+    async public void StopTask()
     {
         //if Target detected collision ->
         if (isRunning)
         {
-            audioSource.Play();
+            targetAudioSource.Play();
             isRunning = false;
+            if (currentTaskId < 2)
+            {
+                await speech.Speak("Did you find the target using the guides? Use the right arrow key for yes and the left arrow key if you bumped randomly into the target.", 1);
+            }
+            isInRailsFoundQuestion = true;
             StudyTask t = tasks[currentChunkId][currentTaskInChunk];
             t.time = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - startTime;
             Debug.Log("Task finished in " + t.time);
-            currentTaskId++;
-            currentTaskInChunk++;
-            obstacleManager.TriggerWallsForButton();
         }
     }
 
     
-    public async void ButtonWallPressed(GameObject buttonWall)
+    // KeyBoardButtonPressed(key)
+    public async void ArrowKeyPressed(bool rightArrowPressed)
     {
 
-        Debug.Log("Walls active " + obstacleManager.buttonWallsActive);
-        if (obstacleManager.buttonWallsActive)
+        if (!isRunning && isInRailsFoundQuestion)
         {
+            isInRailsFoundQuestion = false;
             StudyTask t = tasks[currentChunkId][currentTaskInChunk];
-            // if the right wall is touched then 
-            t.foundTargtDeliberately = buttonWall.name == "Button wall right";
-            obstacleManager.TriggerWallsForButton();
-            // move me handle back to the middle
-            PantoHandle handle = GameObject.Find("Panto").GetComponent<LowerHandle>();
-            Vector3 s = new Vector3(
-                0,
-                0,
-                -5);
-            await handle.MoveToPosition(s, 0.005f, false);
+            t.foundTargtDeliberately = rightArrowPressed; // right arrow: found target, left arrow: bumped into target
+            targetAudioSource.Play();
+            currentTaskId++;
+            currentTaskInChunk++;
 
             if (currentTaskId % taskChunkSize != 0)
             {
+                // next task of sequence
                 NextTask();
             }
             else
             {
+                // next chunk
+
                 // after training phase don't show questionnaire
                 if (currentChunkId == -1)
                 {

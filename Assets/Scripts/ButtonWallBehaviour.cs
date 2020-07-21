@@ -9,7 +9,7 @@ public class ButtonWallBehaviour : MonoBehaviour
         {
             Debug.Log("Button wall collided");
             GameObject studyWizard = GameObject.Find("Study Wizard");
-            studyWizard.GetComponent<TaskSequence>().ButtonWallPressed(gameObject);
+            //studyWizard.GetComponent<TaskSequence>().ButtonWallPressed(gameObject);
 
         }
     }
