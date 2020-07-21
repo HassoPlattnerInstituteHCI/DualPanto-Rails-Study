@@ -9,11 +9,12 @@ public class StudyObstacleManager : MonoBehaviour
     private GameObject[] buttonWalls; // two walls that are used for a haptic binary choice button
     public bool buttonWallsActive = false;
 
-    void Start()
+    async void Start()
     {
         target = GameObject.Find("Target");
         rails = GameObject.FindGameObjectsWithTag("Rail");
         buttonWalls = GameObject.FindGameObjectsWithTag("Button wall");
+        await Task.Delay(1000);
         foreach (GameObject g in buttonWalls)
         {
             PantoCollider c = g.GetComponent<PantoCollider>();

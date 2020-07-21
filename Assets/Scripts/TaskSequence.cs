@@ -95,8 +95,8 @@ public class TaskSequence : MonoBehaviour
                 2,
                 0,
                 -5);
-            Debug.Log("Move to position");
-            //await handle.MoveToPosition(t.startPos, 0.005f, false);
+            //Debug.Log("Move to position");
+            await handle.MoveToPosition(t.startPos, 0.005f, false);
             //await handle.MoveToPosition(s, 0.005f, true);
 
             await speech.Speak("3, 2, 1, Go", 0.5f);
@@ -132,6 +132,8 @@ public class TaskSequence : MonoBehaviour
     
     public async void ButtonWallPressed(GameObject buttonWall)
     {
+
+        Debug.Log("Walls active " + obstacleManager.buttonWallsActive);
         if (obstacleManager.buttonWallsActive)
         {
             StudyTask t = tasks[currentChunkId][currentTaskInChunk];
