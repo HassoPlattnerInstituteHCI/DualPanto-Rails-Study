@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -7,10 +6,21 @@ public class StudyObstacleManager : MonoBehaviour
 {
     private GameObject target;
     GameObject[] rails;
+    private GameObject[] buttonWalls; // two walls that are used for a haptic binary choice button
+    public bool buttonWallsActive = false;
+
     void Start()
     {
         target = GameObject.Find("Target");
         rails = GameObject.FindGameObjectsWithTag("Rail");
+        buttonWalls = GameObject.FindGameObjectsWithTag("Button wall");
+        foreach (GameObject g in buttonWalls)
+        {
+            PantoCollider c = g.GetComponent<PantoCollider>();
+            c.onLower = false; // only use the upper handle for the button
+            c.CreateObstacle();
+            g.SetActive(false);
+        }
         Debug.Log("Starting obstacle manager");
         // if we register obstacles too early, the device will not work any longer (only sync debug logs will be printed
         // I am working on fixing this, but for now just add a wait
@@ -20,6 +30,17 @@ public class StudyObstacleManager : MonoBehaviour
         {
             EnableObstacle(collider);
         }*/
+    }
+
+    private void EnableButtonWall(PantoCollider collider, bool enable)
+    {
+        if (enable)
+        {
+            collider.Enable();
+        } else
+        {
+            collider.Disable();
+        }
     }
 
     private void EnableObstacle(PantoCollider collider)
@@ -90,4 +111,17 @@ public class StudyObstacleManager : MonoBehaviour
         rails = newRails.ToArray(typeof(GameObject)) as GameObject[];
 
     }
+
+    // after each performed trial trigger a haptic button consisting of 2 vertical walls
+    public void TriggerWallsForButton()
+    {
+        //Time.timeScale = Time.timeScale == 1 ? 0.0f : 1.0f;
+        buttonWallsActive = !buttonWallsActive;
+        foreach (GameObject g in buttonWalls)
+        {
+            g.SetActive(buttonWallsActive);
+            EnableButtonWall(g.GetComponent<PantoCollider>(), buttonWallsActive);
+        }
+    }
+
 }
