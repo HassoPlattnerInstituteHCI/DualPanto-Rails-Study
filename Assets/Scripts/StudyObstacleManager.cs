@@ -13,6 +13,8 @@ public class StudyObstacleManager : MonoBehaviour
         rails = GameObject.FindGameObjectsWithTag("Rail");
         Debug.Log("Starting obstacle manager");
         await Task.Delay(1000);
+        
+
         // if we register obstacles too early, the device will not work any longer (only sync debug logs will be printed
         // I am working on fixing this, but for now just add a wait
         //await Task.Delay(1000);
@@ -26,7 +28,8 @@ public class StudyObstacleManager : MonoBehaviour
 
     private void EnableObstacle(PantoCollider collider)
     {
-        collider.onUpper = false;
+        collider.onLower = false;
+        collider.onUpper = true;
         collider.CreateObstacle();
         collider.Enable();
         
@@ -55,6 +58,17 @@ public class StudyObstacleManager : MonoBehaviour
         await Task.Delay(1000);
     }
 
+    async public Task EnableWalls()
+    {
+        GameObject[] walls = GameObject.FindGameObjectsWithTag("Wall");
+        foreach(GameObject wall in walls)
+        {
+            EnableObstacle(wall.GetComponent<PantoCollider>());
+            await Task.Delay(100);
+        }
+    }
+
+
     public GameObject ReEnableTarget(Vector3 position, Vector3 scale)
     {
         GameObject newTarget = Instantiate(target);
@@ -76,7 +90,9 @@ public class StudyObstacleManager : MonoBehaviour
         {
             GameObject rail = Instantiate(rails[i]);
             rail.SetActive(true);
-            int rotationAngle = 45 + i * 90;
+            int rotationAngle = i * 90;
+            // TODO: calculate max length of the rails (where they collide with outer walls of the playing area)
+
             rail.transform.localScale = new Vector3(length, 1, width);
             rail.transform.eulerAngles = new Vector3(0, rotationAngle, 0);
             rail.transform.position = targetPos;

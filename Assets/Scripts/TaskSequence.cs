@@ -21,10 +21,13 @@ public class TaskSequence : MonoBehaviour
     private SpeechOut speech;
     private int userId = -1;
     private int taskCount = 0;
-    
+    private uint numTrialsWithExplanation = 2;
+    private uint minTimeToRail = 30;
+    private bool firstTrial = true;
+
     AudioSource targetAudioSource;
     public TextAsset csvFile;
-    public int currentTaskId = 0;
+    public uint currentTaskId = 0;
     public int taskChunkSize;
     public int currentChunkId = -1; // allow to start at a later block if the apparatus crashes during execution
     // start with chunk -1 (test runs)
@@ -65,7 +68,9 @@ public class TaskSequence : MonoBehaviour
                 float.Parse(fields[3], System.Globalization.CultureInfo.InvariantCulture),
                 0,
                 float.Parse(fields[4], System.Globalization.CultureInfo.InvariantCulture));
-            StudyTask t = new StudyTask(userId, taskId, blockId, targetPos, startPos, 0.2f, true, Int32.Parse(fields[9]), 1);
+            int guideLength = int.Parse(fields[9]);
+            bool guidesEnabled = guideLength != 0;
+            StudyTask t = new StudyTask(userId, taskId, blockId, targetPos, startPos, 0.2f, guidesEnabled, guideLength, 1);
             if (tasks.ContainsKey(blockId))
             {
                 tasks[blockId].Add(t);
@@ -90,22 +95,31 @@ public class TaskSequence : MonoBehaviour
             StudyTask t = tasks[currentChunkId][currentTaskInChunk];
             Debug.Log("New task " + t.ToString());
             obstacleManager.DisableAll();
-            PantoHandle handle = GameObject.Find("Panto").GetComponent<LowerHandle>();
+            PantoHandle handle = GameObject.Find("Panto").GetComponent<UpperHandle>();
             await Task.Delay(1000);
             Vector3 s = new Vector3(
                 2,
                 0,
                 -5);
             //Debug.Log("Move to position");
-            await handle.MoveToPosition(t.startPos, 0.005f, false);
+            await handle.MoveToPosition(t.startPos, 0.0005f, false);
             //await handle.MoveToPosition(s, 0.005f, true);
 
-            await speech.Speak("3, 2, 1, Go", 0.5f);
+            await speech.Speak("3, 2, 1, Go", 1);
             handle.Free();
+            if (firstTrial)
+            {
+                // enable the walls of the scene after moving the handle for the first time
+                //to make sure the handle is within the bounds of the room
+                await obstacleManager.EnableWalls();
+                firstTrial = false;
+            }
             obstacleManager.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
-
+            Debug.Log("Guides enabled " + t.guidesEnabled + "" +t.guideLength);
             if (t.guidesEnabled)
             {
+                // TODO: take care of too long rails that pass the whole playing area
+                Debug.Log("Enable rails");
                 obstacleManager.ReEnableRails(t.targetPos, t.guideWidth, t.guideLength);
             }
 
@@ -121,13 +135,14 @@ public class TaskSequence : MonoBehaviour
         {
             targetAudioSource.Play();
             isRunning = false;
-            if (currentTaskId < 2)
+            StudyTask t = tasks[currentChunkId][currentTaskInChunk];
+            t.time = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - startTime;
+            if (currentTaskId < numTrialsWithExplanation)
             {
+                // only say this for the first two trials of the tutorial
                 await speech.Speak("Did you find the target using the guides? Use the right arrow key for yes and the left arrow key if you bumped randomly into the target.", 1);
             }
             isInRailsFoundQuestion = true;
-            StudyTask t = tasks[currentChunkId][currentTaskInChunk];
-            t.time = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - startTime;
             Debug.Log("Task finished in " + t.time);
         }
     }
@@ -177,7 +192,7 @@ public class TaskSequence : MonoBehaviour
             StudyTask t = tasks[currentChunkId][currentTaskInChunk];
             long timeToRail = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - startTime;
             // make sure to have a min time for the time to rail, otherwise the collision might be detected right when the rail is spawned
-            if (t.timeToRail == -1 && timeToRail > 30)
+            if (t.timeToRail == -1 && timeToRail > minTimeToRail)
             {
                 t.timeToRail = timeToRail;
             }
