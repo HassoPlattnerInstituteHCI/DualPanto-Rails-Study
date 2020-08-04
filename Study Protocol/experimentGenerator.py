@@ -8,8 +8,8 @@ user_id = randrange(0,100000)
 task_id = 0
 block_id = 0
 
-panto_bounds_x = [-11, 11]
-panto_bounds_y = [-4, -16]
+panto_bounds_x = [-8, 8]
+panto_bounds_y = [-4.5, -16]
 
 
 def is_in_bounds(point):
@@ -88,11 +88,11 @@ def add_trial_to_df(block_id, trial_id, trial):
 
 
 #target_positions   = [[-8, -6], [8,-6], [-10,-9], [10,-9], [-8,-12], [8,-12]] # 6 target positions (circular around the middle)
-target_positions   = [[0, -7], [7,-9], [-7,-9], [4,-11], [-4,-11]] # 5 target positions around the middle
-target_distances = [8,12]
+target_positions   = [[0, -7], [6,-9], [-6,-9], [3,-11], [-3,-11]] # 5 target positions around the middle
+target_distances = [5, 10]
 trials_per_block   = 5
 #conditions         = ['rail', 'control'] #rail / control condition
-rail_lengths = [0,8,16,1000] # 1000 means crossing the room from its bounds
+rail_lengths = [0,8,16]
 angles_count = 2
 
 positions = generate_start_positions(target_positions=target_positions, angles_count=angles_count, distances=target_distances)

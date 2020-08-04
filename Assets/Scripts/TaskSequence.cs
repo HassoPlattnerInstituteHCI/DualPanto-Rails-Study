@@ -140,7 +140,7 @@ public class TaskSequence : MonoBehaviour
             if (currentTaskId < numTrialsWithExplanation)
             {
                 // only say this for the first two trials of the tutorial
-                await speech.Speak("Did you find the target using the guides? Use the right arrow key for yes and the left arrow key if you bumped randomly into the target.", 1);
+                await speech.Speak("Did you find the target by intentionally approaching it? Using the right arrow key if you did and the left arrow key if you bumped randomly into the target.", 1);
             }
             isInRailsFoundQuestion = true;
             Debug.Log("Task finished in " + t.time);
@@ -206,7 +206,7 @@ public class TaskSequence : MonoBehaviour
         if (!File.Exists(path))
         {
             // add header to csv file (watch the order of attributes and questionnaire answers
-            string header = "UserId, TaskId, BlockId, TargetX, TargetY, StartX, StartY, GuideLength, Time, TimeToRail, Agency, Easiness, Found Target";
+            string header = "UserId,TaskId,BlockId,TargetX,TargetY,StartX,StartY,GuideLength,Time,TimeToRail,FoundTarget,Agency,Easiness";
             using (StreamWriter sw = File.CreateText(path))
             {
                 sw.WriteLine(header);

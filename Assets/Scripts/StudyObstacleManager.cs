@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -6,15 +7,18 @@ public class StudyObstacleManager : MonoBehaviour
 {
     private GameObject target;
     GameObject[] rails;
-    
+    private float roomHeight;
+    private float roomWidth;
+    private float verticalRoomCenter;
     async void Start()
     {
         target = GameObject.Find("Target");
         rails = GameObject.FindGameObjectsWithTag("Rail");
         Debug.Log("Starting obstacle manager");
         await Task.Delay(1000);
-        
-
+        roomHeight = Math.Abs(GameObject.Find("Wall top").transform.position.z - GameObject.Find("Wall bottom").transform.position.z);
+        roomWidth = GameObject.Find("Wall right").transform.position.x - GameObject.Find("Wall left").transform.position.x;
+        verticalRoomCenter = GameObject.Find("Wall top").transform.position.z - roomHeight / 2;
         // if we register obstacles too early, the device will not work any longer (only sync debug logs will be printed
         // I am working on fixing this, but for now just add a wait
         //await Task.Delay(1000);
@@ -92,10 +96,33 @@ public class StudyObstacleManager : MonoBehaviour
             rail.SetActive(true);
             int rotationAngle = i * 90;
             // TODO: calculate max length of the rails (where they collide with outer walls of the playing area)
-
-            rail.transform.localScale = new Vector3(length, 1, width);
-            rail.transform.eulerAngles = new Vector3(0, rotationAngle, 0);
             rail.transform.position = targetPos;
+            if (length > roomHeight)
+            {
+                // if we have rails that go through the whole room
+                if (rotationAngle == 0)
+                {
+                    //horizontal rail
+                    rail.transform.localScale = new Vector3(roomWidth, 1, width);
+                    // we have to horizontally center the rail to avoid out of
+                    // bounds crashes on the firmware
+                    Vector3 railPos = new Vector3(0, 0, targetPos.z);
+                    rail.transform.position = railPos;
+                } else
+                {
+                    //vertical rail
+                    rail.transform.localScale = new Vector3(roomHeight, 1, width);
+                    // we have to vertically center the rail to avoid out of
+                    // bounds crashes on the firmware
+                    Vector3 railPos = new Vector3(targetPos.x, 0, verticalRoomCenter);
+                    rail.transform.position = railPos;
+                }
+            } else
+            {
+
+                rail.transform.localScale = new Vector3(length, 1, width);
+            }
+            rail.transform.eulerAngles = new Vector3(0, rotationAngle, 0);
             newRails.Add(rail);
             rail.gameObject.AddComponent<PantoBoxCollider>();
             EnableObstacle(rail.gameObject.GetComponent<PantoBoxCollider>());
