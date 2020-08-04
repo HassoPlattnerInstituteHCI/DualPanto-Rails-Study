@@ -13,8 +13,6 @@ public class TaskSequence : MonoBehaviour
     private StudyUIManager studyUIManager;
     private long startTime;
     private Dictionary<int, List<StudyTask>> tasks = new Dictionary<int, List<StudyTask>>();
-    //private ArrayList tasks = new ArrayList(); // TODO: put the tasks into chunks
-    private Dictionary<int, List<string>> questionnaireAnswers = new Dictionary<int, List<string>>(); // ["agency","easiness"] 
     private int currentTaskInChunk = 0;
     private bool isRunning = false;
     private bool isInRailsFoundQuestion = false;
@@ -97,13 +95,7 @@ public class TaskSequence : MonoBehaviour
             obstacleManager.DisableAll();
             PantoHandle handle = GameObject.Find("Panto").GetComponent<UpperHandle>();
             await Task.Delay(1000);
-            Vector3 s = new Vector3(
-                2,
-                0,
-                -5);
-            //Debug.Log("Move to position");
             await handle.MoveToPosition(t.startPos, 0.0005f, false);
-            //await handle.MoveToPosition(s, 0.005f, true);
 
             await speech.Speak("3, 2, 1, Go", 1);
             handle.Free();
@@ -140,7 +132,7 @@ public class TaskSequence : MonoBehaviour
             if (currentTaskId < numTrialsWithExplanation)
             {
                 // only say this for the first two trials of the tutorial
-                await speech.Speak("Did you find the target by intentionally approaching it? Using the right arrow key if you did and the left arrow key if you bumped randomly into the target.", 1);
+                await speech.Speak("Please press the right arrow key if you found the target by intentionally approaching it or the left arrow key if you bumped randomly into the target.", 1);
             }
             isInRailsFoundQuestion = true;
             Debug.Log("Task finished in " + t.time);
@@ -206,7 +198,7 @@ public class TaskSequence : MonoBehaviour
         if (!File.Exists(path))
         {
             // add header to csv file (watch the order of attributes and questionnaire answers
-            string header = "UserId,TaskId,BlockId,TargetX,TargetY,StartX,StartY,GuideLength,Time,TimeToRail,FoundTarget,Agency,Easiness";
+            string header = "UserId,TaskId,BlockId,TargetX,TargetY,StartX,StartY,GuideLength,Time,TimeToRail,FoundTarget,Agency,Easiness,Helpfulness";
             using (StreamWriter sw = File.CreateText(path))
             {
                 sw.WriteLine(header);

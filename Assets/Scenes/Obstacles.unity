@@ -1750,7 +1750,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: '"The system helped me finding the target."'
+  m_Text: '"The system helped me finding the targets."'
 --- !u!222 &484691170
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2249,7 +2249,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: '"Finding the object was easy."'
+  m_Text: '"Finding the targets was easy."'
 --- !u!222 &668069469
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3147,7 +3147,7 @@ MonoBehaviour:
     m_VerticalOverflow: 1
     m_LineSpacing: 1
   m_Text: "Please rate the following statements about \nthe last sequence of 5 trials:\n\n\"I
-    felt that I had full agency in my movement.\""
+    felt that I had full control over my movements.\""
 --- !u!222 &1218768463
 CanvasRenderer:
   m_ObjectHideFlags: 0

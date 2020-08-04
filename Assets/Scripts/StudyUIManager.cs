@@ -66,12 +66,15 @@ public class StudyUIManager : MonoBehaviour
     {
         Slider agencySlider = GameObject.Find("AgencySlider").GetComponent<Slider>();
         Slider easinessSlider = GameObject.Find("EasinessSlider").GetComponent<Slider>();
+        Slider helpfulnessSlider = GameObject.Find("HelpfulnessSlider").GetComponent<Slider>();
 
         string agency = agencySlider.value.ToString();
         string easiness = easinessSlider.value.ToString();
-        studyWizard.ExportResults(new List<string> { agency, easiness });
-        agencySlider.SetValueWithoutNotify(3);
-        easinessSlider.SetValueWithoutNotify(3);
+        string helpfulness = helpfulnessSlider.value.ToString();
+        studyWizard.ExportResults(new List<string> { agency, easiness, helpfulness });
+        agencySlider.SetValueWithoutNotify(agencySlider.maxValue/2 + 1);
+        easinessSlider.SetValueWithoutNotify(easinessSlider.maxValue / 2 + 1);
+        helpfulnessSlider.SetValueWithoutNotify(helpfulnessSlider.maxValue / 2 + 1);
     }
 
     // the first menu that the user sees in which the study is explained
