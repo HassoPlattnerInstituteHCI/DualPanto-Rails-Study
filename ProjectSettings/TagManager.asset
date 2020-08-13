@@ -3,7 +3,14 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Rail
+  - ShowOnIntro
+  - ShowOnFinish
+  - ShowOnStart
+  - ShowOnPause
+  - Button wall
+  - Wall
   layers:
   - Default
   - TransparentFX
