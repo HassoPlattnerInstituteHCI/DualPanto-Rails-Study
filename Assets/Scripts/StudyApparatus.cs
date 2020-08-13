@@ -5,8 +5,9 @@ using SpeechIO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
+using DualPantoFramework;
 
-public class TaskSequence : MonoBehaviour
+public class StudyApparatus : MonoBehaviour
 {
 
     private StudyObstacleManager obstacleManager;
@@ -66,9 +67,9 @@ public class TaskSequence : MonoBehaviour
                 float.Parse(fields[3], System.Globalization.CultureInfo.InvariantCulture),
                 0,
                 float.Parse(fields[4], System.Globalization.CultureInfo.InvariantCulture));
-            int guideLength = int.Parse(fields[9]);
-            bool guidesEnabled = guideLength != 0;
-            StudyTask t = new StudyTask(userId, taskId, blockId, targetPos, startPos, 0.2f, guidesEnabled, guideLength, 1);
+            string condition = fields[9];
+            bool guidesEnabled = condition == "8" || condition == "through";
+            StudyTask t = new StudyTask(userId, taskId, blockId, targetPos, startPos, 0.2f, guidesEnabled, condition, 1);
             if (tasks.ContainsKey(blockId))
             {
                 tasks[blockId].Add(t);
@@ -107,12 +108,16 @@ public class TaskSequence : MonoBehaviour
                 firstTrial = false;
             }
             obstacleManager.ReEnableTarget(t.targetPos, new Vector3(t.targetSize, t.targetSize, t.targetSize));
-            Debug.Log("Guides enabled " + t.guidesEnabled + "" +t.guideLength);
+            Debug.Log("Condition " + t.condition);
             if (t.guidesEnabled)
             {
-                // TODO: take care of too long rails that pass the whole playing area
-                Debug.Log("Enable rails");
-                obstacleManager.ReEnableRails(t.targetPos, t.guideWidth, t.guideLength);
+                obstacleManager.ReEnableRails(t.targetPos, t.guideWidth, t.condition);
+            } else
+            {
+                if(t.condition == "forcefield")
+                {
+                    obstacleManager.EnableForceField();
+                }
             }
 
             startTime = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
@@ -129,10 +134,11 @@ public class TaskSequence : MonoBehaviour
             isRunning = false;
             StudyTask t = tasks[currentChunkId][currentTaskInChunk];
             t.time = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - startTime;
+            obstacleManager.DisableForceField();
             if (currentTaskId < numTrialsWithExplanation)
             {
                 // only say this for the first two trials of the tutorial
-                await speech.Speak("Please press the right arrow key if you found the target by intentionally approaching it or the left arrow key if you bumped randomly into the target.", 1);
+                await speech.Speak("Did you find the target by intentionally approaching it or did you randomly bump into it? Press the right arrow key if you found it intentionally or the left arrow key if you bumped into it.", 1);
             }
             isInRailsFoundQuestion = true;
             Debug.Log("Task finished in " + t.time);
@@ -140,7 +146,6 @@ public class TaskSequence : MonoBehaviour
     }
 
     
-    // KeyBoardButtonPressed(key)
     public async void ArrowKeyPressed(bool rightArrowPressed)
     {
 
@@ -191,14 +196,13 @@ public class TaskSequence : MonoBehaviour
         }
     }
 
-
     public void ExportResults(List<string> answers)
     {
         string path = "studyResults_" + userId + ".csv";
         if (!File.Exists(path))
         {
             // add header to csv file (watch the order of attributes and questionnaire answers
-            string header = "UserId,TaskId,BlockId,TargetX,TargetY,StartX,StartY,GuideLength,Time,TimeToRail,FoundTarget,Agency,Easiness,Helpfulness";
+            string header = "UserId,TaskId,BlockId,TargetX,TargetY,StartX,StartY,Condition,Time,TimeToRail,FoundTarget,Agency,Easiness,Helpfulness";
             using (StreamWriter sw = File.CreateText(path))
             {
                 sw.WriteLine(header);
@@ -233,13 +237,13 @@ public class StudyTask
     public Vector3 startPos;
     public float guideWidth;
     public bool guidesEnabled;
-    public int guideLength;
+    public string condition;
     public float targetSize;
     public long time;
     public long timeToRail;
     public bool foundTargtDeliberately;
 
-    public StudyTask(int userId, int taskId, int blockId, Vector3 targetPos, Vector3 startPos, float guideWidth, bool guidesEnabled, int guideLength, float targetSize)
+    public StudyTask(int userId, int taskId, int blockId, Vector3 targetPos, Vector3 startPos, float guideWidth, bool guidesEnabled, string condition, float targetSize)
     {
         this.userId = userId;
         this.taskId = taskId;
@@ -248,7 +252,7 @@ public class StudyTask
         this.startPos = startPos;
         this.guideWidth = guideWidth;
         this.guidesEnabled = guidesEnabled;
-        this.guideLength = guideLength;
+        this.condition = condition;
         this.targetSize = targetSize;
         time = -1;
         timeToRail = -1;
@@ -267,7 +271,7 @@ public class StudyTask
             targetPos.z.ToString(),
             startPos.x.ToString(),
             startPos.z.ToString(),
-            guideLength.ToString(),
+            condition.ToString(),
             time.ToString(),
             timeToRail.ToString(),
             foundTargtDeliberately.ToString()

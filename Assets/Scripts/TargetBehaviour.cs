@@ -8,7 +8,7 @@ public class TargetBehaviour : MonoBehaviour
         if (col.gameObject.name == "PlayerUpper" || col.gameObject.name == "PlayerLower")
         {
             GameObject studyWizard = GameObject.Find("Study Wizard");
-            studyWizard.GetComponent<TaskSequence>().StopTask();
+            studyWizard.GetComponent<StudyApparatus>().StopTask();
 
         }
     }

@@ -1,32 +1,39 @@
 ﻿using System;
 using System.Collections;
 using System.Threading.Tasks;
+using DualPantoFramework;
 using UnityEngine;
+
 
 public class StudyObstacleManager : MonoBehaviour
 {
     private GameObject target;
     GameObject[] rails;
+    private GameObject forceField;
+    GameObject leftWall;
+    GameObject rightWall;
+    GameObject topWall;
+    GameObject bottomWall;
     private float roomHeight;
     private float roomWidth;
     private float verticalRoomCenter;
     async void Start()
     {
         target = GameObject.Find("Target");
+        forceField = GameObject.Find("ForceField");
+        DisableForceField();
         rails = GameObject.FindGameObjectsWithTag("Rail");
         Debug.Log("Starting obstacle manager");
-        await Task.Delay(1000);
-        roomHeight = Math.Abs(GameObject.Find("Wall top").transform.position.z - GameObject.Find("Wall bottom").transform.position.z);
-        roomWidth = GameObject.Find("Wall right").transform.position.x - GameObject.Find("Wall left").transform.position.x;
-        verticalRoomCenter = GameObject.Find("Wall top").transform.position.z - roomHeight / 2;
         // if we register obstacles too early, the device will not work any longer (only sync debug logs will be printed
         // I am working on fixing this, but for now just add a wait
-        //await Task.Delay(1000);
-        //PantoCollider[] pantoColliders = GameObject.FindObjectsOfType<PantoCollider>();
-        /*foreach (PantoCollider collider in pantoColliders)
-        {
-            EnableObstacle(collider);
-        }*/
+        await Task.Delay(1000);
+        leftWall = GameObject.Find("Wall left");
+        topWall = GameObject.Find("Wall top");
+        rightWall = GameObject.Find("Wall right");
+        bottomWall = GameObject.Find("Wall bottom");
+        roomHeight = Math.Abs(topWall.transform.position.z - bottomWall.transform.position.z);
+        roomWidth = rightWall.transform.position.x - leftWall.transform.position.x;
+        verticalRoomCenter = topWall.transform.position.z - (roomHeight / 2);
     }
 
 
@@ -39,6 +46,33 @@ public class StudyObstacleManager : MonoBehaviour
         
     }
 
+    // spawns a force field around the target position
+    public void EnableForceField()
+    {
+        forceField.SetActive(true);
+        forceField.transform.position = target.transform.position;
+
+        // the forcefield needs to be double as big as the max dist to the wall
+        float maxDistToWallX = Math.Max(
+            Math.Abs(Vector3.Distance(target.transform.position, rightWall.transform.position)),
+            Math.Abs(Vector3.Distance(target.transform.position, leftWall.transform.position))
+        );
+        float maxDistToWallY = Math.Max(
+            Math.Abs(Vector3.Distance(target.transform.position, topWall.transform.position)),
+            Math.Abs(Vector3.Distance(target.transform.position, bottomWall.transform.position))
+        );
+
+        forceField.transform.localScale = new Vector3(2*maxDistToWallX, 1, 2*maxDistToWallY);
+    }
+
+    public void DisableForceField()
+    {
+        forceField.SetActive(false);
+        //CenterForceField ff = target.GetComponent<CenterForceField>();
+        //if (ff != null)
+        //{
+        //}
+    }
 
     async public void DisableAll()
     {
@@ -59,6 +93,7 @@ public class StudyObstacleManager : MonoBehaviour
                 await Task.Delay(100);
             }
         }
+        DisableForceField();
         await Task.Delay(1000);
     }
 
@@ -73,7 +108,7 @@ public class StudyObstacleManager : MonoBehaviour
     }
 
 
-    public GameObject ReEnableTarget(Vector3 position, Vector3 scale)
+    public void ReEnableTarget(Vector3 position, Vector3 scale)
     {
         GameObject newTarget = Instantiate(target);
         Destroy(target);
@@ -81,13 +116,11 @@ public class StudyObstacleManager : MonoBehaviour
         target.transform.position = position;
         target.transform.localScale = scale;
         Debug.Log("enabling target " + target.GetInstanceID());
-        //target.gameObject.AddComponents<PantoCollider>());
         EnableObstacle(target.gameObject.GetComponent<PantoCollider>());
-        Debug.Log("enabled target");
-        return target;
+
     }
 
-    public void ReEnableRails(Vector3 targetPos, float width, int length)
+    public void ReEnableRails(Vector3 targetPos, float width, string condition)
     {
         ArrayList newRails = new ArrayList();
         for (int i = 0; i < rails.Length; i++)
@@ -95,9 +128,8 @@ public class StudyObstacleManager : MonoBehaviour
             GameObject rail = Instantiate(rails[i]);
             rail.SetActive(true);
             int rotationAngle = i * 90;
-            // TODO: calculate max length of the rails (where they collide with outer walls of the playing area)
             rail.transform.position = targetPos;
-            if (length > roomHeight)
+            if (condition == "through")
             {
                 // if we have rails that go through the whole room
                 if (rotationAngle == 0)
@@ -120,7 +152,7 @@ public class StudyObstacleManager : MonoBehaviour
             } else
             {
 
-                rail.transform.localScale = new Vector3(length, 1, width);
+                rail.transform.localScale = new Vector3(int.Parse(condition), 1, width);
             }
             rail.transform.eulerAngles = new Vector3(0, rotationAngle, 0);
             newRails.Add(rail);

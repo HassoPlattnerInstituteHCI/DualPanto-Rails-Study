@@ -9,7 +9,7 @@ public class StudyUIManager : MonoBehaviour
     GameObject[] pauseObjects;
     GameObject[] finishObjects;
     GameObject blackScreen;
-    TaskSequence studyWizard;
+    StudyApparatus studyWizard;
 
     void Start()
     {
@@ -18,7 +18,7 @@ public class StudyUIManager : MonoBehaviour
         pauseObjects = GameObject.FindGameObjectsWithTag("ShowOnPause");
         finishObjects = GameObject.FindGameObjectsWithTag("ShowOnFinish");
         blackScreen = GameObject.Find("Black Screen");
-        studyWizard = GameObject.Find("Study Wizard").GetComponent<TaskSequence>();
+        studyWizard = GameObject.Find("Study Wizard").GetComponent<StudyApparatus>();
     }
 
     public void ContinueStudy()

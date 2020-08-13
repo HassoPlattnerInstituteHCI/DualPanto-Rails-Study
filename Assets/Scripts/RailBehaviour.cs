@@ -8,7 +8,7 @@ public class RailBehaviour : MonoBehaviour
         if (col.gameObject.name == "PlayerUpper" || col.gameObject.name == "PlayerLower")
         {
             GameObject studyWizard = GameObject.Find("Study Wizard");
-            studyWizard.GetComponent<TaskSequence>().LogTimeToRail();
+            studyWizard.GetComponent<StudyApparatus>().LogTimeToRail();
 
         }
     }

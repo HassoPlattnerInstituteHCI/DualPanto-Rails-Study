@@ -92,7 +92,7 @@ target_positions   = [[0, -7], [6,-9], [-6,-9], [3,-11], [-3,-11]] # 5 target po
 target_distances = [5, 10]
 trials_per_block   = 5
 #conditions         = ['rail', 'control'] #rail / control condition
-rail_lengths = [0,8,16]
+rail_lengths = [0,8,"through","forcefield"]
 angles_count = 2
 
 positions = generate_start_positions(target_positions=target_positions, angles_count=angles_count, distances=target_distances)
