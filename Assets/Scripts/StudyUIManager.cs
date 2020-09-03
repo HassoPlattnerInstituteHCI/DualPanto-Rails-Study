@@ -10,6 +10,7 @@ public class StudyUIManager : MonoBehaviour
     GameObject[] finishObjects;
     GameObject blackScreen;
     StudyApparatus studyWizard;
+    private bool studyStarted = false;
 
     void Start()
     {
@@ -25,13 +26,15 @@ public class StudyUIManager : MonoBehaviour
     {
         // this method is called after the intro, the start and the questionnaire menu
         // except of the intro, we always want to save the results in the csv file
-        if (studyWizard.currentTaskId == 0)
+        if (!studyStarted)
         {
             HideUIAndResume();
+            studyStarted = true;
             return;
         }
         if (studyWizard.currentChunkId != -1)
         {
+            // only show questionnaire for every chunk but the training chunk
             FinishQuestionnaire();
         }
         studyWizard.NextChunk();

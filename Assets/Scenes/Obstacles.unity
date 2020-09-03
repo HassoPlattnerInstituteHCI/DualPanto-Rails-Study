@@ -1161,8 +1161,8 @@ GameObject:
   - component: {fileID: 368592430}
   - component: {fileID: 368592429}
   - component: {fileID: 368592428}
-  - component: {fileID: 368592427}
   - component: {fileID: 368592432}
+  - component: {fileID: 368592427}
   m_Layer: 0
   m_Name: Rail ne sw
   m_TagString: Rail
@@ -1179,7 +1179,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 368592426}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 09cec89c855408d47937c25a1befeede, type: 3}
+  m_Script: {fileID: 11500000, guid: f099d0166da804c5aa57bf1c575ac42f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   onUpper: 1
@@ -1254,7 +1254,7 @@ Transform:
   m_GameObject: {fileID: 368592426}
   m_LocalRotation: {x: 0, y: 0.86602545, z: 0, w: 0.49999994}
   m_LocalPosition: {x: 0.03000021, y: 0, z: -9.440001}
-  m_LocalScale: {x: 10, y: 1, z: 0.2}
+  m_LocalScale: {x: 10, y: 1, z: 0.4}
   m_Children:
   - {fileID: 705507995}
   m_Father: {fileID: 0}
@@ -1662,8 +1662,8 @@ GameObject:
   - component: {fileID: 515043664}
   - component: {fileID: 515043663}
   - component: {fileID: 515043662}
-  - component: {fileID: 515043661}
   - component: {fileID: 515043666}
+  - component: {fileID: 515043661}
   m_Layer: 0
   m_Name: Rail nw se
   m_TagString: Rail
@@ -1680,7 +1680,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 515043660}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 09cec89c855408d47937c25a1befeede, type: 3}
+  m_Script: {fileID: 11500000, guid: f099d0166da804c5aa57bf1c575ac42f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   onUpper: 1
@@ -1755,7 +1755,7 @@ Transform:
   m_GameObject: {fileID: 515043660}
   m_LocalRotation: {x: 0, y: 0.2588191, z: 0, w: 0.9659258}
   m_LocalPosition: {x: 0.030000001, y: 0, z: -9.440001}
-  m_LocalScale: {x: 10, y: 1, z: 0.2}
+  m_LocalScale: {x: 10, y: 1, z: 0.4}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 7
@@ -2312,7 +2312,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: -1.3599031e+10, z: 4.5893e-41, w: 0}
+  m_BoundingSphereOverride: {x: 2.555e-42, y: 1.01e-43, z: 2.480597e+27, w: 0}
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
@@ -4340,12 +4340,17 @@ PrefabInstance:
     - target: {fileID: 7059977517541396031, guid: f2b8fa9072355482a8c222c63401a42e,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 17
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 7059977517541396035, guid: f2b8fa9072355482a8c222c63401a42e,
         type: 3}
       propertyPath: m_Name
       value: ForceField
+      objectReference: {fileID: 0}
+    - target: {fileID: 7059977517541396035, guid: f2b8fa9072355482a8c222c63401a42e,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7059977517541396025, guid: f2b8fa9072355482a8c222c63401a42e, type: 3}
@@ -4533,8 +4538,8 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "Your task: You are in a room where a small haptic object is located. \nYou
-    will be blindfolded and your goal is to find the target as quickly as possible
+  m_Text: "Your task: You are in a room where a small circular haptic object is located.
+    \nYou will be blindfolded and your goal is to find the object as quickly as possible
     by moving the upper handle of the device. There are 3 different conditions: \n1:
     Two haptic guides will be in the room leading to the target. If you hit them
     you can slide along them to find the target. \n2: A forcefield will drag you
@@ -5088,10 +5093,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2bc0fe8d69a1410084a81313edd3d30, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  csvFile: {fileID: 4900000, guid: 38b06349456b74184b72a9b99617f1d8, type: 3}
-  currentTaskId: 5
+  csvFile: {fileID: 4900000, guid: f3550b770d73b42c78a0a6aaa31af8eb, type: 3}
+  currentTaskId: 75
   taskChunkSize: 5
-  currentChunkId: 0
+  currentChunkId: 15
 --- !u!4 &1858425059
 Transform:
   m_ObjectHideFlags: 0

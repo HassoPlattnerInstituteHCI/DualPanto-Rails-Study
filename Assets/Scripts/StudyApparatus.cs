@@ -69,7 +69,7 @@ public class StudyApparatus : MonoBehaviour
                 float.Parse(fields[4], System.Globalization.CultureInfo.InvariantCulture));
             string condition = fields[9];
             bool guidesEnabled = condition == "8" || condition == "through";
-            StudyTask t = new StudyTask(userId, taskId, blockId, targetPos, startPos, 0.2f, guidesEnabled, condition, 1);
+            StudyTask t = new StudyTask(userId, taskId, blockId, targetPos, startPos, 0.4f, guidesEnabled, condition, 1);
             if (tasks.ContainsKey(blockId))
             {
                 tasks[blockId].Add(t);
@@ -83,7 +83,11 @@ public class StudyApparatus : MonoBehaviour
 
     async public void NextTask()
     {
-        if(currentTaskId == taskCount)
+        Debug.Log("Task id " + currentTaskId);
+        Debug.Log("Chunk id " + currentChunkId);
+
+        // need to subtract taskChunkSize for the training block
+        if (currentTaskId == taskCount - taskChunkSize)
         {
             Debug.Log("Finished study");
             Debug.Log(taskCount);
@@ -259,7 +263,26 @@ public class StudyTask
         foundTargtDeliberately = false;
     }
 
-    public string ToString(List<string> answers)
+    public override string ToString()
+    {
+        ArrayList attrs = new ArrayList{
+            userId.ToString(),
+            taskId.ToString(),
+            blockId.ToString(),
+            targetPos.x.ToString(),
+            targetPos.z.ToString(),
+            startPos.x.ToString(),
+            startPos.z.ToString(),
+            condition.ToString(),
+            time.ToString(),
+            timeToRail.ToString(),
+            foundTargtDeliberately.ToString()
+        };
+        // at the end append the answers of the questionnaire in the order of appearance
+        return string.Join(",", attrs.ToArray());
+    }
+
+        public string ToString(List<string> answers)
     {
         // order of attributes is the same as in the object
         // order is userId, taskId, blockId, targetX, targetY, startX, startY, guideLength, time
